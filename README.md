@@ -2,8 +2,7 @@
 
 > **CloudKu Official SDK** Solusi integrasi CDN yang cepat, aman, dan dirancang khusus untuk pengembang modern.
 
-| NPM Package : https://www.npmjs.com/package/@xstbot/cloudku
-| Dokumentasi : https://cloudku.sbs/docs
+| NPM Package : https://www.npmjs.com/package/@xstbot/cloudku\n| Dokumentasi : https://cloudku.sbs/docs
 
 ---
 
