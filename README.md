@@ -2,22 +2,19 @@
 
 > **CloudKu Official SDK** Solusi integrasi CDN yang cepat, aman, dan dirancang khusus untuk pengembang modern.
 
-[![NPM Version](https://img.shields.io/npm/v/@xstbot/cloudku)](https://www.npmjs.com/package/@xstbot/cloudku)
-[![License](https://img.shields.io/npm/l/@xstbot/cloudku)](https://www.npmjs.com/package/@xstbot/cloudku)
-[![Status](https://img.shields.io/badge/status-stable-brightgreen)]()
-
-¦ NPM Package : https://www.npmjs.com/package/@xstbot/cloudku
-– Dokumentasi : https://cloudku.sbs/docs
+| NPM Package : https://www.npmjs.com/package/@xstbot/cloudku
+| Dokumentasi : https://cloudku.sbs/docs
 
 ---
 
-## ‹ Daftar Isi
+## Daftar Isi
 
 - [Tentang](#tentang)
 - [Instalasi](#instalasi)
 - [Penggunaan](#penggunaan)
   - [JavaScript (CommonJS)](#javascript-commonjs)
   - [JavaScript (ES Module)](#javascript-es-module)
+  - [Sebagai Module / Function](#sebagai-module--function)
 - [API Reference](#api-reference)
 - [Response Schema](#response-schema)
 - [Error Handling](#error-handling)
@@ -28,6 +25,9 @@
 ## Tentang
 
 `@xstbot/cloudku` adalah SDK resmi dari **CloudKu CDN** yang memungkinkan pengembang mengunggah file ke jaringan CDN secara mudah dan cepat. Library ini mendukung **JavaScript** dalam format **CommonJS (CJS)** maupun **ES Module (ESM)**, sehingga kompatibel dengan berbagai environment Node.js modern.
+
+> ⚠️ **Penting:** `CloudKu` adalah sebuah **class**, bukan function biasa.
+> Gunakan keyword `new` saat membuat instance, lalu panggil method `.upload()` untuk mengunggah file.
 
 ---
 
@@ -41,7 +41,7 @@ yarn add @xstbot/cloudku
 
 ---
 
-## – Penggunaan
+## Penggunaan
 
 ### JavaScript (CommonJS)
 
@@ -53,7 +53,8 @@ const buffer = fs.readFileSync('./photo.jpg');
 
 async function handleUpload() {
   try {
-    const result = await CloudKu(buffer, 'photo.jpg');
+    const cloudku = new CloudKu(); // ← gunakan 'new' karena CloudKu adalah class
+    const result = await cloudku.upload(buffer, 'photo.jpg'); // ← panggil method .upload()
     if (result.status === 'success') {
       console.log('File berhasil diunggah:', result.url);
     } else {
@@ -78,7 +79,8 @@ import { readFileSync } from 'fs';
 const buffer = readFileSync('./photo.jpg');
 
 const handleUpload = async () => {
-  const result = await CloudKu(buffer, 'photo.jpg');
+  const cloudku = new CloudKu(); // ← gunakan 'new' karena CloudKu adalah class
+  const result = await cloudku.upload(buffer, 'photo.jpg'); // ← panggil method .upload()
   if (result.status === 'success') {
     console.log(`File live at: ${result.url}`);
   } else {
@@ -91,40 +93,109 @@ handleUpload();
 
 ---
 
+### Sebagai Module / Function
+
+Jika ingin membungkus CloudKu dalam function terpisah agar lebih modular:
+
+```js
+// cloudku.js
+const { CloudKu } = require('@xstbot/cloudku');
+
+/**
+ * Upload file ke CloudKu CDN
+ * @param {Buffer} buffer - Buffer file yang akan diunggah
+ * @param {string} filename - Nama file beserta ekstensinya
+ * @returns {Promise<{status: string, url?: string, message?: string}>}
+ */
+async function uploadToCloudKu(buffer, filename) {
+  try {
+    const cloudku = new CloudKu();
+    const result = await cloudku.upload(buffer, filename);
+    if (result.status === 'success') {
+      return { status: 'success', url: result.url };
+    } else {
+      return { status: 'error', message: result.message };
+    }
+  } catch (err) {
+    return { status: 'error', message: err.message };
+  }
+}
+
+module.exports = { uploadToCloudKu };
+```
+
+Cara penggunaan:
+
+```js
+const fs = require('fs');
+const { uploadToCloudKu } = require('./cloudku');
+
+const buffer = fs.readFileSync('./photo.jpg');
+
+uploadToCloudKu(buffer, 'photo.jpg').then((result) => {
+  if (result.status === 'success') {
+    console.log('File berhasil diunggah:', result.url);
+  } else {
+    console.error('Error:', result.message);
+  }
+});
+```
+
+---
+
 ## API Reference
 
-### CloudKu(fileBuffer, fileName)
+### new CloudKu()
 
-Fungsi utama untuk upload file ke CloudKu CDN.
+Membuat instance baru dari class CloudKu.
 
-| Parameter    | Type     | Required | Description                     |
-|--------------|----------|----------|---------------------------------|
-| fileBuffer   | Buffer   | YES      | Isi file sebagai Node.js Buffer |
-| fileName     | string   | YES      | Nama file beserta ekstensinya   |
+```js
+const cloudku = new CloudKu();
+```
 
-**Returns:** `Promise<Object>` Response dari CDN.
+### cloudku.upload(fileBuffer, fileName)
+
+Method utama untuk upload file ke CloudKu CDN.
+
+| Parameter  | Type   | Required | Description                     |
+|------------|--------|----------|---------------------------------|
+| fileBuffer | Buffer | YES      | Isi file sebagai Node.js Buffer |
+| fileName   | string | YES      | Nama file beserta ekstensinya   |
+
+**Returns:** `Promise<Object>` — Response dari CDN.
+
+### cloudku.getOptions()
+
+Method untuk mendapatkan konfigurasi/opsi yang tersedia pada instance CloudKu.
+
+```js
+const cloudku = new CloudKu();
+const options = cloudku.getOptions();
+console.log(options);
+```
 
 ---
 
 ## Response Schema
 
-| Property   | Type                    | Description                                   |
-|------------|-------------------------|-----------------------------------------------|
-| status     | "success" atau "error"  | Status hasil operasi                          |
-| message    | string                  | Detail pesan atau informasi error             |
-| url        | string atau undefined   | URL publik file (hanya tersedia jika success) |
+| Property | Type                   | Description                                   |
+|----------|------------------------|-----------------------------------------------|
+| status   | "success" atau "error" | Status hasil operasi                          |
+| message  | string                 | Detail pesan atau informasi error             |
+| url      | string atau undefined  | URL publik file (hanya tersedia jika success) |
 
 ---
 
 ## Error Handling
 
-Library ini sudah menangani error secara internal. Jika upload gagal, fungsi akan mengembalikan object dengan `status: 'error'` dan `message` yang berisi keterangan kegagalan sehingga aplikasi Anda tidak akan crash.
+Tangani error dengan memeriksa property `status` pada response:
 
 ```js
 const { CloudKu } = require('@xstbot/cloudku');
 
 async function safeUpload(buffer, filename) {
-  const result = await CloudKu(buffer, filename);
+  const cloudku = new CloudKu();
+  const result = await cloudku.upload(buffer, filename);
 
   if (result.status === 'success') {
     console.log('URL File:', result.url);
@@ -138,7 +209,24 @@ async function safeUpload(buffer, filename) {
 
 ---
 
-## — Tautan Penting
+## Kesalahan Umum
+
+### ❌ Class constructor CloudKu cannot be invoked without 'new'
+
+Terjadi jika memanggil `CloudKu()` tanpa keyword `new`.
+
+```js
+// ❌ Salah
+const result = await CloudKu(buffer, 'photo.jpg');
+
+// ✅ Benar
+const cloudku = new CloudKu();
+const result = await cloudku.upload(buffer, 'photo.jpg');
+```
+
+---
+
+## Tautan Penting
 
 | Sumber        | URL                                           |
 |---------------|-----------------------------------------------|
